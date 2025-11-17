@@ -1,0 +1,36 @@
+
+name: php-smoke
+on: [push]
+
+jobs:
+  php-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: PHP Syntax Check
+        run: |
+          find login -name "*.php" -print0 | xargs -0 -n1 php -l
+
+      - name: Show tests folder structure
+        run: ls -R tests
+
+      - name: Start PHP server
+        run: php -S 127.0.0.1:8000 -t login &
+
+      - name: Wait for server
+        run: sleep 3
+
+      - name: Run smoke tests
+        run: |
+          chmod +x tests/smoke.sh
+          tests/smoke.sh
+
+      - name: Show server log
+        if: failure()
+        run: cat /home/runner/work/_temp/**/*.log || true
