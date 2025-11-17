@@ -1,36 +1,34 @@
+name: Flutter CI
 
-name: php-smoke
-on: [push]
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-  php-smoke:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: stable
 
-      - name: PHP Syntax Check
-        run: |
-          find login -name "*.php" -print0 | xargs -0 -n1 php -l
+    - name: Install dependencies
+      run: flutter pub get
 
-      - name: Show tests folder structure
-        run: ls -R tests
+    - name: Give permission to test files
+      run: chmod +x tests/*.sh
 
-      - name: Start PHP server
-        run: php -S 127.0.0.1:8000 -t login &
+    - name: Run Smoke Test
+      run: ./tests/smoke.sh
 
-      - name: Wait for server
-        run: sleep 3
+    - name: Run Login Test
+      run: ./tests/login_test.sh
 
-      - name: Run smoke tests
-        run: |
-          chmod +x tests/smoke.sh
-          tests/smoke.sh
-
-      - name: Show server log
-        if: failure()
-        run: cat /home/runner/work/_temp/**/*.log || true
+    - name: Build APK (optional)
+      run: flutter build apk --release
